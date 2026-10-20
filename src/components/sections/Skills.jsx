@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout, Server, Database, Wrench, CheckCircle } from 'lucide-react';
-import { portfolioData } from '../../data/portfolio';
+import { usePortfolio } from '../../context/PortfolioContext';
 import { SectionHeading } from '../ui/SectionHeading';
 import { Card } from '../ui/Card';
 
@@ -8,11 +8,11 @@ const CATEGORY_ICONS = {
   frontend: Layout,
   backend: Server,
   databases: Database,
-  tools: Wrench
+  tools: Wrench,
 };
 
 export const Skills = () => {
-  const { skills } = portfolioData;
+  const { skills } = usePortfolio();
 
   return (
     <section id="skills" className="py-20 md:py-28 bg-[#0B1F3A]/30 border-y border-[#1E3A5F]/40 relative">
@@ -20,12 +20,12 @@ export const Skills = () => {
         
         <SectionHeading
           tag="Keahlian Teknis"
-          title={skills.title}
-          subtitle={skills.subtitle}
+          title="Keahlian & Perkakas Kerja"
+          subtitle="Teknologi dan perkakas kerja yang saya pelajari serta terapkan secara praktis dari database Turso"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {skills.categories.map((category) => {
+          {(skills || []).map((category) => {
             const IconComponent = CATEGORY_ICONS[category.id] || Layout;
 
             return (
@@ -43,15 +43,17 @@ export const Skills = () => {
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
-                  {category.description}
-                </p>
+                {category.description && (
+                  <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                    {category.description}
+                  </p>
+                )}
 
                 {/* Skill items list */}
                 <ul className="space-y-3 mt-auto" role="list">
-                  {category.items.map((skill, index) => (
+                  {(category.items || []).map((skill, index) => (
                     <li
-                      key={index}
+                      key={skill.id || index}
                       className="p-2.5 rounded-lg bg-[#071426]/70 border border-[#1E3A5F]/60 flex flex-col justify-center"
                     >
                       <div className="flex items-center justify-between">
@@ -72,7 +74,7 @@ export const Skills = () => {
         {/* Note on skills */}
         <div className="mt-10 text-center">
           <p className="text-xs text-slate-400 max-w-xl mx-auto font-mono">
-            * Seluruh keahlian di atas dipelajari dan diterapkan secara berkelanjutan melalui latihan praktis dan proyek aplikasi mandiri.
+            * Seluruh keahlian di atas dikelola secara dinamis melalui CMS Admin dan disimpan dalam basis data Turso.
           </p>
         </div>
 

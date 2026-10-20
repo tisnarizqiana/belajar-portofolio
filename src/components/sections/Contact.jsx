@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { Mail, MessageSquare, Send, CheckCircle2, AlertCircle, Copy, Check } from 'lucide-react';
+import { Mail, MessageSquare, Send, CheckCircle2, AlertCircle, Copy, Check, Loader2 } from 'lucide-react';
+import { usePortfolio } from '../../context/PortfolioContext';
+import { portfolioService } from '../../services/portfolio.service';
 import { portfolioData } from '../../data/portfolio';
 import { SectionHeading } from '../ui/SectionHeading';
-import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { GithubIcon, LinkedinIcon } from '../ui/Icons';
 import { validateContactForm } from '../../utils/validation';
 
 export const Contact = () => {
-  const { contact, personal } = portfolioData;
+  const { profile } = usePortfolio();
+  const contactData = portfolioData.contact;
+
+  const contactEmail = profile?.email || contactData.email;
+  const github = profile?.github_url || portfolioData.personal.github;
+  const linkedin = profile?.linkedin_url || portfolioData.personal.linkedin;
+  const whatsapp = profile?.whatsapp_url || portfolioData.personal.whatsapp;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -18,19 +25,20 @@ export const Contact = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [submissionStatus, setSubmissionStatus] = useState(null); // 'prepared' | null
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState(null); // 'success' | 'prepared' | 'error' | null
+  const [serverMessage, setServerMessage] = useState('');
   const [copied, setCopied] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field-specific error as user types
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validation = validateContactForm({
@@ -46,31 +54,48 @@ export const Contact = () => {
     }
 
     setErrors({});
+    setSubmitting(true);
+    setSubmissionStatus(null);
+    setServerMessage('');
 
-    // Construct safe mailto URI
+    try {
+      // 1. Submit directly to Turso DB through backend API
+      const res = await portfolioService.sendContactMessage({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message + (formData.subject ? `\n[Subjek: ${formData.subject}]` : ''),
+      });
+
+      setSubmissionStatus('success');
+      setServerMessage(res.message || 'Pesan Anda berhasil terkirim dan tersimpan dengan aman di database!');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      // Fallback: If DB is unreachable or rate limited, notify honestly and offer mailto
+      setSubmissionStatus('error');
+      setServerMessage(err.message || 'Gagal menyimpan ke basis data. Anda dapat mengirim langsung via email.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenMailClient = () => {
     const subjectLine = encodeURIComponent(
-      formData.subject.trim() || `Kontak Portofolio dari ${formData.name.trim()}`
+      formData.subject.trim() || `Kontak Portofolio dari ${formData.name.trim() || 'Pengunjung'}`
     );
     const bodyContent = encodeURIComponent(
       `Nama: ${formData.name.trim()}\nEmail: ${formData.email.trim()}\n\nPesan:\n${formData.message.trim()}`
     );
-
-    const mailtoUrl = `mailto:${contact.email}?subject=${subjectLine}&body=${bodyContent}`;
-
-    // Trigger user's mail client safely
+    const mailtoUrl = `mailto:${contactEmail}?subject=${subjectLine}&body=${bodyContent}`;
     window.location.href = mailtoUrl;
-
-    // Display honest client-side confirmation
     setSubmissionStatus('prepared');
   };
 
   const handleCopyEmail = async () => {
     try {
-      await navigator.clipboard.writeText(contact.email);
+      await navigator.clipboard.writeText(contactEmail);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Fallback
       setCopied(false);
     }
   };
@@ -81,8 +106,8 @@ export const Contact = () => {
         
         <SectionHeading
           tag="Hubungi Saya"
-          title={contact.title}
-          subtitle={contact.subtitle}
+          title="Mari Berdiskusi & Terhubung"
+          subtitle="Terbuka untuk diskusi kesempatan kerja, magang, kerja sama proyek, atau bertukar wawasan teknis."
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
@@ -93,7 +118,7 @@ export const Contact = () => {
               <div>
                 <h3 className="text-xl font-bold text-slate-100">Mari Terhubung</h3>
                 <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-                  {contact.availabilityText}
+                  {profile?.status || contactData.availabilityText}
                 </p>
               </div>
 
@@ -105,7 +130,7 @@ export const Contact = () => {
                   </div>
                   <div className="truncate">
                     <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">Email Langsung</span>
-                    <span className="text-sm font-semibold text-slate-200 truncate block">{contact.email}</span>
+                    <span className="text-sm font-semibold text-slate-200 truncate block">{contactEmail}</span>
                   </div>
                 </div>
                 <button
@@ -130,9 +155,9 @@ export const Contact = () => {
                 </span>
 
                 <div className="flex flex-col gap-2.5">
-                  {personal.github && (
+                  {github && (
                     <a
-                      href={personal.github}
+                      href={github}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-lg bg-[#071426]/70 hover:bg-[#071426] border border-[#1E3A5F] text-slate-300 hover:text-white transition-colors group"
@@ -145,9 +170,9 @@ export const Contact = () => {
                     </a>
                   )}
 
-                  {personal.linkedin && (
+                  {linkedin && (
                     <a
-                      href={personal.linkedin}
+                      href={linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-lg bg-[#071426]/70 hover:bg-[#071426] border border-[#1E3A5F] text-slate-300 hover:text-white transition-colors group"
@@ -160,9 +185,9 @@ export const Contact = () => {
                     </a>
                   )}
 
-                  {personal.whatsapp && (
+                  {whatsapp && (
                     <a
-                      href={personal.whatsapp}
+                      href={whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-lg bg-[#071426]/70 hover:bg-[#071426] border border-[#1E3A5F] text-slate-300 hover:text-white transition-colors group"
@@ -177,32 +202,67 @@ export const Contact = () => {
                 </div>
               </div>
 
-              {/* Client-side transparency note */}
+              {/* Data Persistence Note */}
               <div className="pt-2 border-t border-[#1E3A5F]/60">
                 <p className="text-xs text-slate-400 leading-relaxed font-mono">
-                  {contact.note}
+                  Pesan yang dikirim melalui formulir ini disimpan secara terenkripsi di basis data Turso dan dapat ditinjau oleh pemilik situs melalui CMS Admin.
                 </p>
               </div>
             </Card>
           </div>
 
-          {/* Right Column: Accessible Contact Form */}
+          {/* Right Column: Contact Form */}
           <div className="lg:col-span-7">
             <Card className="bg-[#0B1F3A]/90 border-[#1E3A5F] p-6 sm:p-8" hoverEffect={false}>
               <h3 className="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2 font-mono">
                 <Send className="w-5 h-5 text-sky-400" aria-hidden="true" />
-                <span>Formulir Pesan</span>
+                <span>Kirim Pesan ke Database</span>
               </h3>
 
-              {submissionStatus === 'prepared' && (
+              {submissionStatus === 'success' && (
                 <div
                   className="mb-6 p-4 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-sm flex items-start gap-3"
                   role="status"
                 >
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
+                    <strong className="font-semibold block">Pesan Berhasil Terkirim!</strong>
+                    <span>{serverMessage}</span>
+                  </div>
+                </div>
+              )}
+
+              {submissionStatus === 'error' && (
+                <div
+                  className="mb-6 p-4 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-sm flex items-start gap-3"
+                  role="status"
+                >
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="space-y-2">
+                    <div>
+                      <strong className="font-semibold block">Pengiriman Gagal</strong>
+                      <span>{serverMessage}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenMailClient}
+                      className="text-xs font-semibold text-sky-400 hover:underline block"
+                    >
+                      Klik di sini untuk membuka aplikasi email (mailto:) &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {submissionStatus === 'prepared' && (
+                <div
+                  className="mb-6 p-4 rounded-xl bg-sky-950/60 border border-sky-800/80 text-sky-300 text-sm flex items-start gap-3"
+                  role="status"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
                     <strong className="font-semibold block">Draf email telah disiapkan!</strong>
-                    <span>Aplikasi email default Anda telah dibuka dengan isi pesan di atas. Silakan periksa dan tekan 'Kirim' pada aplikasi email Anda.</span>
+                    <span>Aplikasi email default Anda telah dibuka dengan pesan di atas.</span>
                   </div>
                 </div>
               )}
@@ -221,14 +281,13 @@ export const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     aria-invalid={!!errors.name}
-                    aria-describedby={errors.name ? "name-error" : undefined}
                     placeholder="Contoh: Alex Pratama"
                     className={`w-full px-4 py-3 rounded-lg bg-[#071426] border text-slate-100 placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition-colors ${
                       errors.name ? 'border-rose-500 focus-visible:ring-rose-400' : 'border-[#1E3A5F] focus-visible:border-sky-500'
                     }`}
                   />
                   {errors.name && (
-                    <p id="name-error" className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
+                    <p className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.name}</span>
                     </p>
@@ -248,14 +307,13 @@ export const Contact = () => {
                     value={formData.email}
                     onChange={handleChange}
                     aria-invalid={!!errors.email}
-                    aria-describedby={errors.email ? "email-error" : undefined}
                     placeholder="nama@domain.com"
                     className={`w-full px-4 py-3 rounded-lg bg-[#071426] border text-slate-100 placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition-colors ${
                       errors.email ? 'border-rose-500 focus-visible:ring-rose-400' : 'border-[#1E3A5F] focus-visible:border-sky-500'
                     }`}
                   />
                   {errors.email && (
-                    <p id="email-error" className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
+                    <p className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.email}</span>
                     </p>
@@ -265,7 +323,7 @@ export const Contact = () => {
                 {/* Subject field (Optional) */}
                 <div>
                   <label htmlFor="contact-subject" className="block text-xs font-mono font-medium text-slate-300 uppercase tracking-wider mb-2">
-                    Subjek <span className="text-slate-400 text-[10px] lowercase">(opsional)</span>
+                    Topik / Subjek Pesan <span className="text-slate-500 text-[11px] lowercase">(opsional)</span>
                   </label>
                   <input
                     id="contact-subject"
@@ -273,7 +331,7 @@ export const Contact = () => {
                     type="text"
                     value={formData.subject}
                     onChange={handleChange}
-                    placeholder="Topik diskusi atau penawaran proyek"
+                    placeholder="Contoh: Diskusi Peluang Kolaborasi / Proyek Web"
                     className="w-full px-4 py-3 rounded-lg bg-[#071426] border border-[#1E3A5F] text-slate-100 placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:border-sky-500 transition-colors"
                   />
                 </div>
@@ -286,36 +344,50 @@ export const Contact = () => {
                   <textarea
                     id="contact-message"
                     name="message"
-                    rows={5}
                     required
+                    rows={5}
                     value={formData.message}
                     onChange={handleChange}
                     aria-invalid={!!errors.message}
-                    aria-describedby={errors.message ? "message-error" : undefined}
                     placeholder="Tuliskan pesan, rincian proyek, atau pertanyaan Anda di sini..."
                     className={`w-full px-4 py-3 rounded-lg bg-[#071426] border text-slate-100 placeholder-slate-500 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition-colors resize-y ${
                       errors.message ? 'border-rose-500 focus-visible:ring-rose-400' : 'border-[#1E3A5F] focus-visible:border-sky-500'
                     }`}
                   />
                   {errors.message && (
-                    <p id="message-error" className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
+                    <p className="mt-1.5 text-xs text-rose-400 flex items-center gap-1" role="alert">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{errors.message}</span>
                     </p>
                   )}
                 </div>
 
-                <div className="pt-2">
-                  <Button
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <button
                     type="submit"
-                    variant="primary"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                    icon={Send}
-                    iconPosition="right"
+                    disabled={submitting}
+                    className="w-full sm:w-auto px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 text-white font-medium text-sm shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                   >
-                    Buka Draf Email
-                  </Button>
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Mengirim ke Database...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Kirim Pesan Sekarang</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenMailClient}
+                    className="text-xs text-slate-400 hover:text-sky-300 transition-colors"
+                  >
+                    Buka di aplikasi email
+                  </button>
                 </div>
               </form>
             </Card>

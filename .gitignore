@@ -19,6 +19,9 @@ dist-ssr
 .env.local
 .env.*.local
 *.local
+*.db
+portfolio.db
+local.db
 
 # Vercel cache
 .vercel

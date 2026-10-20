@@ -1,45 +1,72 @@
-import React from 'react';
-import { useActiveSection } from './hooks/useActiveSection';
-import { Navbar } from './components/layout/Navbar';
-import { Hero } from './components/sections/Hero';
-import { About } from './components/sections/About';
-import { Skills } from './components/sections/Skills';
-import { Projects } from './components/sections/Projects';
-import { Journey } from './components/sections/Journey';
-import { Contact } from './components/sections/Contact';
-import { Footer } from './components/layout/Footer';
+import React, { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { PortfolioProvider } from './context/PortfolioContext';
+import { PublicPortfolio } from './pages/public/PublicPortfolio';
+import { ProtectedRoute } from './components/admin/ProtectedRoute';
+import { Loader2 } from 'lucide-react';
 
-const SECTION_IDS = ['home', 'about', 'skills', 'projects', 'journey', 'contact'];
+// Code-split admin pages to optimize public bundle size
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview').then(m => ({ default: m.AdminOverview })));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile').then(m => ({ default: m.AdminProfile })));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects').then(m => ({ default: m.AdminProjects })));
+const AdminSkills = lazy(() => import('./pages/admin/AdminSkills').then(m => ({ default: m.AdminSkills })));
+const AdminExperiences = lazy(() => import('./pages/admin/AdminExperiences').then(m => ({ default: m.AdminExperiences })));
+const AdminArticles = lazy(() => import('./pages/admin/AdminArticles').then(m => ({ default: m.AdminArticles })));
+const AdminMedia = lazy(() => import('./pages/admin/AdminMedia').then(m => ({ default: m.AdminMedia })));
+const AdminMessages = lazy(() => import('./pages/admin/AdminMessages').then(m => ({ default: m.AdminMessages })));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen bg-[#071426] flex items-center justify-center text-sky-400">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+    </div>
+  );
+}
 
 export function App() {
-  const activeSection = useActiveSection(SECTION_IDS, 'home');
-
   return (
-    <div className="min-h-screen bg-[#071426] text-slate-100 flex flex-col selection:bg-sky-500/30 selection:text-sky-200">
-      {/* Skip to Main Content Link for Keyboard Accessibility */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-50 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-xl focus:outline-none focus:ring-2 focus:ring-sky-400"
-      >
-        Lewati ke konten utama
-      </a>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        {/* Public Portfolio Route */}
+        <Route
+          path="/"
+          element={
+            <PortfolioProvider>
+              <PublicPortfolio />
+            </PortfolioProvider>
+          }
+        />
 
-      {/* Navigation Header */}
-      <Navbar activeSection={activeSection} />
+        {/* Admin Login Route */}
+        <Route path="/admin/login" element={<AdminLogin />} />
 
-      {/* Main Content Area */}
-      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
-        <Hero />
-        <About />
-        <Skills />
-        <Projects />
-        <Journey />
-        <Contact />
-      </main>
+        {/* Protected Admin CMS Dashboard Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverview />} />
+          <Route path="profile" element={<AdminProfile />} />
+          <Route path="projects" element={<AdminProjects />} />
+          <Route path="skills" element={<AdminSkills />} />
+          <Route path="experiences" element={<AdminExperiences />} />
+          <Route path="articles" element={<AdminArticles />} />
+          <Route path="media" element={<AdminMedia />} />
+          <Route path="messages" element={<AdminMessages />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
 
-      {/* Footer */}
-      <Footer />
-    </div>
+        {/* Fallback to Home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

@@ -1,11 +1,22 @@
 import React from 'react';
 import { ArrowRight, Mail, Terminal, Sparkles, FileCode2 } from 'lucide-react';
+import { usePortfolio } from '../../context/PortfolioContext';
 import { portfolioData } from '../../data/portfolio';
 import { Button } from '../ui/Button';
 import { GithubIcon, LinkedinIcon } from '../ui/Icons';
 
 export const Hero = () => {
-  const { personal, hero } = portfolioData;
+  const { profile } = usePortfolio();
+  const heroConfig = portfolioData.hero;
+
+  const displayName = profile?.name || portfolioData.personal.name;
+  const displayTitle = profile?.title || portfolioData.personal.role;
+  const displayStatus = profile?.status || portfolioData.personal.status;
+  const displayGreeting = profile?.hero_greeting || heroConfig.greeting;
+  const displayHeroTitle = profile?.hero_title || heroConfig.title;
+  const displayDescription = profile?.hero_description || heroConfig.description;
+  const githubUrl = profile?.github_url || portfolioData.personal.github;
+  const linkedinUrl = profile?.linkedin_url || portfolioData.personal.linkedin;
 
   return (
     <section
@@ -35,58 +46,70 @@ export const Hero = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>{personal.status}</span>
+              <span>{displayStatus}</span>
             </div>
 
             {/* Greeting & Headline */}
             <div className="space-y-2">
               <p className="text-sky-400 font-mono text-sm sm:text-base tracking-wider uppercase font-semibold">
-                {hero.greeting}
+                {displayGreeting}
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-100 tracking-tight leading-[1.15]">
-                {personal.name}
+                {displayName}
               </h1>
               <p className="text-2xl sm:text-3xl font-semibold bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">
-                {hero.title}
+                {displayHeroTitle}
               </p>
             </div>
 
             {/* Concise professional description */}
             <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-              {hero.description}
+              {displayDescription}
             </p>
 
             {/* Primary & Secondary Call to Actions */}
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <Button
                 as="a"
-                href={hero.primaryCta.href}
+                href="#projects"
                 variant="primary"
                 size="lg"
                 icon={ArrowRight}
                 iconPosition="right"
               >
-                {hero.primaryCta.text}
+                Lihat Proyek
               </Button>
               <Button
                 as="a"
-                href={hero.secondaryCta.href}
+                href="#contact"
                 variant="secondary"
                 size="lg"
                 icon={Mail}
                 iconPosition="left"
               >
-                {hero.secondaryCta.text}
+                Hubungi Saya
               </Button>
+              {profile?.resume_url && (
+                <Button
+                  as="a"
+                  href={profile.resume_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outline"
+                  size="lg"
+                >
+                  Unduh CV
+                </Button>
+              )}
             </div>
 
             {/* Social profiles & quick info */}
             <div className="pt-4 flex items-center gap-4 text-sm text-slate-400 border-t border-[#1E3A5F]/60">
               <span className="font-mono text-xs uppercase tracking-wider text-slate-400">Tautan:</span>
               <div className="flex items-center gap-3">
-                {personal.github && (
+                {githubUrl && (
                   <a
-                    href={personal.github}
+                    href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-slate-300 hover:text-sky-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded p-1"
@@ -96,9 +119,9 @@ export const Hero = () => {
                     <span className="text-xs font-mono">GitHub</span>
                   </a>
                 )}
-                {personal.linkedin && (
+                {linkedinUrl && (
                   <a
-                    href={personal.linkedin}
+                    href={linkedinUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-slate-300 hover:text-sky-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded p-1"
@@ -129,7 +152,7 @@ export const Hero = () => {
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
                     <FileCode2 className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
-                    <span>{hero.codeSnippet.fileName}</span>
+                    <span>DeveloperProfile.js</span>
                   </div>
                   <div className="w-12"></div>
                 </div>
@@ -140,8 +163,8 @@ export const Hero = () => {
                     <code>
                       <span className="text-purple-400">const</span>{' '}
                       <span className="text-sky-300">developer</span> = {'{\n'}
-                      {'  '}name: <span className="text-emerald-300">'{personal.name}'</span>,{'\n'}
-                      {'  '}role: <span className="text-emerald-300">'{personal.role}'</span>,{'\n'}
+                      {'  '}name: <span className="text-emerald-300">'{displayName}'</span>,{'\n'}
+                      {'  '}role: <span className="text-emerald-300">'{displayTitle}'</span>,{'\n'}
                       {'  '}focus: [<span className="text-amber-300">'Frontend'</span>, <span className="text-amber-300">'Backend'</span>, <span className="text-amber-300">'Databases'</span>],{'\n'}
                       {'  '}cleanCode: <span className="text-sky-400">true</span>,{'\n'}
                       {'  '}willingnessToLearn: <span className="text-amber-400">100</span>,{'\n'}

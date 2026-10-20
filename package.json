@@ -8,13 +8,22 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "admin:create": "node scripts/create-admin.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "@tailwindcss/vite": "^4.3.3",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
+    "dompurify": "^3.4.17",
     "lucide-react": "^1.59.0",
+    "marked": "^18.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.4",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

@@ -1,210 +1,273 @@
-# Professional Full-Stack Developer Portfolio
+# Full CMS Portfolio — React, Turso, Cloudinary & Vercel
 
-Portofolio web modern, responsif, dan berorientasi performa tinggi untuk Full-Stack Developer. Dibangun dengan fondasi teknologi mutakhir: **React.js**, **Vite**, **Tailwind CSS v4**, dan **Lucide React**. Siap dideploy ke **Vercel** dengan konfigurasi security headers terstandarisasi.
+Situs portofolio web modern, responsif, dan berorientasi performa tinggi untuk Full-Stack Developer yang dilengkapi **CMS Administration Dashboard** terintegrasi penuh. Menggunakan basis data relasional **Turso (LibSQL)**, CDN media **Cloudinary**, serverless functions **Vercel**, serta antarmuka modern **React 19** dan **Tailwind CSS v4**.
 
 ---
 
-## 🚀 Fitur Utama
+## 🌟 Arsitektur Sistem & Alur Kerja
 
-- **Desain Modern Blue-Tech**: Menggunakan palet bertema deep navy (`#071426`), subtle technical grid, kontras tinggi sesuai standar aksesibilitas WCAG 2.2 AA, dan micro-interactions halus.
-- **Lapisan Data Terpusat (`src/data/portfolio.js`)**: Seluruh profil diri, resume singkat, keahlian teknis, repositori proyek, tautan sosial, dan kontak dapat diubah dari satu file konfigurasi tanpa menyentuh komponen UI.
-- **Navigasi Cerdas & Responsif**: Pelacakan bagian aktif di viewport secara otomatis dengan `IntersectionObserver`, smooth scrolling, serta drawer menu mobile yang ramah aksesibilitas keyboard (Escape key & focus management).
-- **Katalog Proyek Interaktif**: Dilengkapi filter kategori real-time (*Full-Stack*, *Frontend*, *Backend*) dan preview grafis CSS/SVG tanpa ketergantungan pada gambar eksternal yang lambat.
-- **Formulir Kontak Aksesibel & Transparan**: Validasi format email RFC 5322 di sisi client dengan penanganan error interaktif, dan integrasi mekanisme `mailto:` yang aman tanpa klaim palsu penyimpanan data ke server.
-- **Fondasi SEO & Keamanan Siap Produksi**: Dilengkapi meta tags, Open Graph, Twitter Cards, `robots.txt`, `sitemap.xml`, custom SVG favicon, serta header keamanan di `vercel.json` (`nosniff`, `X-Frame-Options: DENY`, `strict-origin-when-cross-origin`, `Permissions-Policy`).
+```mermaid
+graph TD
+    Visitor[Pengunjung Publik] -->|Akses Halaman Depan| PublicWeb[Portofolio Publik /]
+    AdminUser[Administrator] -->|Login Aman /admin/login| CMSDashboard[CMS Dashboard /admin/*]
+    
+    PublicWeb -->|Fetch Data Publik & Published| PublicAPI["/api/public/* (Vercel Functions)"]
+    CMSDashboard -->|Otentikasi Cookie HttpOnly| AuthAPI["/api/auth/* (Login, Logout, Sesi)"]
+    CMSDashboard -->|Kelola CRUD Konten| AdminAPI["/api/admin/* (Projects, Skills, Articles, dll.)"]
+    
+    PublicAPI --> TursoDB[("Turso Database (LibSQL SQLite)")]
+    AuthAPI --> TursoDB
+    AdminAPI --> TursoDB
+    
+    CMSDashboard -->|Minta Signature Unggah| SignatureAPI["/api/admin/media-signature"]
+    CMSDashboard -->|Unggah Langsung Terverifikasi| CloudinaryCDN["Cloudinary Media CDN"]
+    AdminAPI -->|Hapus & Cek Referensi Aset| CloudinaryCDN
+```
 
 ---
 
 ## 🛠️ Stack Teknologi
 
-| Komponen | Teknologi |
-| :--- | :--- |
-| **Framework** | [React.js](https://react.dev/) (v19) |
-| **Build Tool & Bundler** | [Vite](https://vite.dev/) (v8) |
-| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) via `@tailwindcss/vite` |
-| **Ikon Antarmuka** | [Lucide React](https://lucide.dev/) & SVG Brand Icons |
-| **Pengujian (Testing)** | [Vitest](https://vitest.dev/) |
-| **Linter** | [Oxlint](https://oxc.rs/) |
-| **Hosting & Deployment** | [Vercel](https://vercel.com/) |
+| Layer | Teknologi | Peran & Deskripsi |
+| :--- | :--- | :--- |
+| **Frontend UI** | [React.js](https://react.dev/) (v19) | Komponen fungsional modern & hooks |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) | Desain blue-tech dengan token warna terpusat |
+| **Routing** | [React Router](https://reactrouter.com/) (v7) | Navigasi halaman publik & rute admin terproteksi |
+| **Icons** | [Lucide React](https://lucide.dev/) | Ikon antarmuka modern dan tajam |
+| **Markdown** | [Marked](https://marked.js.org/) + [DOMPurify](https://github.com/cure53/DOMPurify) | Parser artikel blog aman dari XSS |
+| **Backend API** | [Vercel Serverless Functions](https://vercel.com/docs/functions) | RESTful API modular berbasis Node.js ES Modules |
+| **Basis Data** | [Turso](https://turso.tech/) (@libsql/client) | Database SQLite terdistribusi berlatensi rendah |
+| **Asset Storage** | [Cloudinary Node SDK](https://cloudinary.com/) | CDN gambar dengan upload signature aman |
+| **Security** | [Bcryptjs](https://github.com/dcodeIO/bcrypt.js) & Web Crypto | Hashing password 12-round & token sesi SHA-256 |
+| **Pengujian** | [Vitest](https://vitest.dev/) | Unit test & integrasi backend-frontend |
+| **Linter** | [Oxlint](https://oxc.rs/) | Static analysis berkecepatan tinggi |
 
 ---
 
-## 📁 Struktur Direktori Proyek
+## 📁 Struktur Direktori
 
 ```text
-├── public/
-│   ├── favicon.svg          # Favicon khusus developer
-│   ├── robots.txt           # Konfigurasi perayapan mesin pencari (SEO)
-│   └── sitemap.xml          # Peta situs untuk pengindeksan publik
+├── api/                             # Backend Vercel Serverless Functions
+│   ├── _lib/                        # Shared backend modules
+│   │   ├── auth.js                  # Hashing password, sesi, cookie serializer
+│   │   ├── cloudinary.js            # In-use reference checker & Cloudinary client
+│   │   ├── db.js                    # Koneksi LibSQL / Turso client singleton
+│   │   ├── http.js                  # JSON responses, error handler, CSRF guard
+│   │   └── rateLimit.js             # Sliding-window rate limiter in-memory
+│   ├── admin/                       # Protected CMS APIs (Require Auth Cookie)
+│   │   ├── articles.js              # CRUD artikel teknis & blog
+│   │   ├── experiences.js           # CRUD riwayat & milestone belajar
+│   │   ├── media.js                 # CRUD aset media database
+│   │   ├── media-signature.js       # Penandatanganan upload aman Cloudinary
+│   │   ├── messages.js              # Manajemen pesan kontak pengunjung
+│   │   ├── profile.js               # Pengaturan bio, kontak, & hero text
+│   │   ├── projects.js              # CRUD proyek, slug validator & gallery
+│   │   ├── settings.js              # Toggle fitur & metadata SEO
+│   │   ├── skills.js                # CRUD keahlian teknis & visibilitas
+│   │   └── stats.js                 # Statistik ringkasan dashboard
+│   ├── auth/                        # Otentikasi Administrator
+│   │   ├── login.js                 # Login terproteksi rate limit & HttpOnly cookie
+│   │   ├── logout.js                # Revokasi sesi di DB & pembersihan cookie
+│   │   └── session.js               # Verifikasi status login aktif
+│   └── public/                      # Public Read-only APIs (Filtered)
+│       ├── articles.js              # Menampilkan hanya artikel berstatus 'published'
+│       ├── contact.js               # Formulir kontak dengan rate limiter ke Turso
+│       ├── experiences.js           # Menampilkan hanya milestone 'is_visible = 1'
+│       ├── profile.js               # Informasi bio publik tanpa data sensitif
+│       ├── projects.js              # Menampilkan hanya proyek 'published'
+│       ├── settings.js              # Pengaturan publik situs
+│       └── skills.js                # Menampilkan hanya keahlian 'is_visible = 1'
+├── db/
+│   └── migrations/                  # Skrip migrasi DDL database Turso
+│       └── 001_initial_schema.sql   # Skema tabel relasional lengkap & indeks
+├── scripts/
+│   ├── create-admin.js              # CLI provisioning akun administrator pertama
+│   ├── migrate.js                   # Runner eksekusi migrasi DDL SQL ke Turso/SQLite
+│   └── seed.js                      # Seeder data awal dari portofolio statis
 ├── src/
-│   ├── assets/              # Aset statis lokal
 │   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Navbar.jsx   # Header navigasi desktop & drawer mobile
-│   │   │   └── Footer.jsx   # Footer dengan copyright dinamis & tautan
-│   │   ├── sections/
-│   │   │   ├── Hero.jsx     # Header pengantar & cuplikan kode interaktif
-│   │   │   ├── About.jsx    # Profil singkat & prinsip kerja
-│   │   │   ├── Skills.jsx   # Pengelompokan keahlian teknis tanpa persentase arbitrer
-│   │   │   ├── Projects.jsx # Galeri proyek dengan filter kategori
-│   │   │   ├── Journey.jsx  # Garis waktu rekam jejak & pembelajaran
-│   │   │   └── Contact.jsx  # Formulir kontak & opsi komunikasi langsung
-│   │   └── ui/
-│   │       ├── Badge.jsx    # Komponen label/tag teknologi
-│   │       ├── Button.jsx   # Tombol aksesibel & tautan dengan styling seragam
-│   │       ├── Card.jsx     # Kontainer kartu bertema navy
-│   │       ├── Icons.jsx    # Ikon vektor mandiri (GitHub, LinkedIn)
-│   │       ├── ProjectIllustration.jsx # Visual preview proyek berbasis SVG/CSS
-│   │       └── SectionHeading.jsx      # Tipografi judul bagian seragam
-│   ├── data/
-│   │   └── portfolio.js     # DATA TERPUSAT: Semua teks & konfigurasi proyek
-│   ├── hooks/
-│   │   └── useActiveSection.js # Hook pelacak bagian aktif di viewport
-│   ├── utils/
-│   │   ├── validation.js    # Logika validasi email dan formulir
-│   │   └── validation.test.js # Unit test otomatis dengan Vitest
-│   ├── App.jsx              # Komponen utama dengan skip-to-content link
-│   ├── index.css            # Entry point Tailwind CSS v4 & konfigurasi tema
-│   └── main.jsx             # Entry point React DOM
-├── index.html               # Halaman utama berstruktur HTML5 semantik & SEO
-├── package.json             # Dependensi dan scripts
-├── vercel.json              # Pengaturan deployment & security response headers
-└── vite.config.js           # Konfigurasi plugin Vite & Tailwind CSS v4
+│   │   ├── admin/                   # Komponen dashboard CMS & ProtectedRoute
+│   │   ├── layout/                  # Navbar publik & Footer
+│   │   ├── sections/                # Hero, About, Skills, Projects, Articles, Journey, Contact
+│   │   └── ui/                      # Button, Card, Badge, Icons, SectionHeading
+│   ├── context/
+│   │   ├── AuthContext.jsx          # Context sesi login administrator
+│   │   └── PortfolioContext.jsx     # Context sinkronisasi data publik Turso
+│   ├── pages/
+│   │   ├── admin/                   # Halaman Overview, Projects, Media, Profile, dll.
+│   │   └── public/                  # PublicPortfolio page
+│   ├── services/                    # Abstraksi request fetch ke /api/*
+│   ├── index.css                    # Tailwind CSS v4 design tokens
+│   ├── App.jsx                      # Client Router (React Router v7) & Code-splitting
+│   └── main.jsx                     # Entry React DOM
+├── tests/
+│   └── backend_cms.test.js          # Pengujian integrasi API, security & database
+├── vercel.json                      # Konfigurasi Vercel SPA rewrites & security headers
+├── vite.config.js                   # Konfigurasi Vite & API dev server middleware
+└── .env.example                     # Contoh template variabel lingkungan
 ```
 
 ---
 
 ## ⚡ Panduan Instalasi & Menjalankan Lokal
 
-### Prasyarat
-- [Node.js](https://nodejs.org/) v18.0.0 atau yang lebih baru (Disarankan Node.js v20+ / v24).
-- npm, pnpm, atau yarn.
+### 1. Prasyarat
+- **Node.js**: v18.0.0 atau lebih baru (Disarankan Node.js v20+ / v22+).
+- **Git** terpasang di komputer Anda.
 
-### 1. Kloning Repositori
+### 2. Kloning atau Buka Direktori Proyek
 ```bash
-git clone https://github.com/USERNAME_ANDA/potofolio.git
-cd potofolio
+git clone https://github.com/faza-magala/portofolio.git
+cd portofolio
 ```
 
-### 2. Instalasi Dependensi
+### 3. Instalasi Dependensi
 ```bash
 npm install
 ```
 
-### 3. Menjalankan Server Pengembangan (Dev Server)
+### 4. Konfigurasi Environment Variables
+Salin file `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Untuk pengembangan lokal, file `.env` dapat dibiarkan kosong karena sistem secara otomatis menggunakan fallback database SQLite lokal (`portfolio.db`).
+
+### 5. Jalankan Migrasi & Seeding Data Awal
+Eksekusi migrasi untuk membentuk tabel di Turso / SQLite lokal:
+```bash
+npm run db:migrate
+```
+Isi data awal dari konten Tisna Rizqiana yang telah ada:
+```bash
+npm run db:seed
+```
+
+### 6. Buat Akun Administrator Pertama
+Gunakan skrip CLI bawaan untuk membuat kredensial admin:
+```bash
+npm run admin:create admin@example.com PasswordAman123!
+```
+
+### 7. Jalankan Server Pengembangan
 ```bash
 npm run dev
 ```
-Buka browser di alamat `http://localhost:5173`.
+Buka browser di:
+- **Portofolio Publik**: [http://localhost:5173](http://localhost:5173)
+- **CMS Administration**: [http://localhost:5173/admin/login](http://localhost:5173/admin/login)
 
 ---
 
-## 📜 Skrip yang Tersedia
+## ☁️ Integrasi Turso Database & Cloudinary
 
-| Perintah | Deskripsi |
-| :--- | :--- |
-| `npm run dev` | Menjalankan server pengembangan Vite lokal dengan Hot Module Replacement (HMR). |
-| `npm run build` | Melakukan kompilasi bundle produksi yang dioptimalkan ke direktori `dist/`. |
-| `npm run preview` | Menjalankan preview lokal dari bundle produksi `dist/`. |
-| `npm run lint` | Menjalankan linter cepat Oxlint untuk memeriksa kebersihan dan kualitas kode. |
-| `npm test` | Menjalankan pengujian unit otomatis menggunakan Vitest. |
+### Setup Database Turso (Cloud)
+1. Kunjungi [Turso.tech](https://turso.tech/) dan buat akun.
+2. Buat basis data baru:
+   ```bash
+   turso db create portfolio-db
+   ```
+3. Dapatkan Database URL:
+   ```bash
+   turso db show portfolio-db --url
+   ```
+4. Buat token autentikasi:
+   ```bash
+   turso db tokens create portfolio-db
+   ```
+5. Masukkan ke file `.env` atau Vercel Environment Variables:
+   ```env
+   TURSO_DATABASE_URL=libsql://portfolio-db-username.turso.io
+   TURSO_AUTH_TOKEN=eyJh...
+   ```
+6. Terapkan skema ke database Turso:
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+### Setup Cloudinary (Media CDN)
+1. Kunjungi [Cloudinary.com](https://cloudinary.com/) dan buat akun gratis.
+2. Buka dashboard Cloudinary dan salin:
+   - **Cloud Name**
+   - **API Key**
+   - **API Secret**
+3. Masukkan ke file `.env` atau Vercel Environment Variables:
+   ```env
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   ```
+*Catatan Keamanan: API Secret Cloudinary hanya tersimpan di backend (serverless function) dan tidak pernah dibocorkan ke client bundle.*
 
 ---
 
-## ✏️ Cara Mengkustomisasi Portofolio
+## 🔒 Fitur Keamanan Sistem (Defense in Depth)
 
-Semua data portofolio dikumpulkan dalam file **[`src/data/portfolio.js`](src/data/portfolio.js)**. Anda tidak perlu menyunting kode React untuk mengganti informasi pribadi Anda.
+1. **Otentikasi & Sesi Kuat**:
+   - Password di-hash menggunakan algoritma **Bcrypt** dengan salt 12 rounds.
+   - Token sesi dibuat secara kriptografis (`crypto.randomBytes(32)`), lalu disimpan dalam bentuk hash **SHA-256** di database Turso.
+   - Sesi dikirimkan melalui cookie browser dengan atribut `HttpOnly`, `SameSite=Lax`, `Path=/`, dan `Secure` pada mode produksi.
+2. **Proteksi CSRF & Origin**:
+   - Setiap mutasi data (`POST`, `PUT`, `DELETE`) memvalidasi header `Origin`, `Referer`, dan `X-Requested-With`.
+3. **Sliding-Window Rate Limiting**:
+   - Endpoint `/api/auth/login` dibatasi maksimal 5 percobaan per 15 menit per alamat IP untuk mencegah brute-force.
+   - Endpoint `/api/public/contact` dibatasi maksimal 5 pesan per jam per IP guna menangkal spam.
+4. **Proteksi Referensi Media**:
+   - Sebelum menghapus aset dari Cloudinary, backend memverifikasi apakah aset sedang digunakan oleh proyek, artikel, atau foto profil. Penghapusan dibatalkan jika aset masih memiliki referensi aktif.
+5. **Privasi Konten Draf**:
+   - Endpoint publik `/api/public/projects` dan `/api/public/articles` secara tegas hanya mengembalikan data dengan status `published`. Draf tidak pernah bocor ke publik.
+6. **Sanitasi Konten Artikel**:
+   - Konten Markdown artikel disanitasi menggunakan pustaka **DOMPurify** sebelum dirender ke HTML untuk mencegah serangan Cross-Site Scripting (XSS).
 
-### 1. Mengubah Profil Pribadi & Media Sosial
-Buka `src/data/portfolio.js` dan sesuaikan objek `personal`:
-```javascript
-personal: {
-  name: "Nama Lengkap Anda",
-  role: "Full-Stack Developer",
-  email: "email.asli.anda@domain.com",
-  github: "https://github.com/username-anda",
-  linkedin: "https://linkedin.com/in/username-anda",
-  whatsapp: "https://wa.me/628123456789", // Opsional
-  bio: "Deskripsi singkat tentang fokus rekayasa perangkat lunak Anda.",
-  status: "Terbuka untuk peluang kerja & magang",
-}
+---
+
+## 🧪 Pengujian & Kualitas Kode
+
+Eksekusi seluruh unit test dan pengujian integrasi:
+```bash
+npm test
+```
+*Hasil: 18 unit tests & integration tests lulus 100%.*
+
+Eksekusi analisis statis / linter:
+```bash
+npm run lint
 ```
 
-### 2. Menambah atau Mengubah Proyek
-Pada bagian `projects.list` di `src/data/portfolio.js`, Anda dapat menambahkan proyek baru dengan struktur:
-```javascript
-{
-  id: "nama-proyek-unik",
-  title: "Nama Aplikasi Anda",
-  category: "Full-Stack", // Pilih: "Full-Stack", "Frontend", atau "Backend"
-  description: "Penjelasan ringkas tentang masalah yang diselesaikan aplikasi ini.",
-  techStack: ["React.js", "Node.js", "PostgreSQL"],
-  githubUrl: "https://github.com/username-anda/repo-proyek",
-  demoUrl: "https://demo-aplikasi-anda.vercel.app", // Biarkan "" jika belum live
-  isSample: false, // Ubah ke false jika ini proyek pribadi asli Anda
-  features: [
-    "Fitur kunci pertama",
-    "Fitur kunci kedua"
-  ],
-  themeIcon: "tasks" // Pilihan tema ilustrasi: "tasks", "shop", "api", "weather"
-}
+Eksekusi build produksi:
+```bash
+npm run build
 ```
-
-### 3. Memperbarui Keahlian Teknis
-Sesuaikan array `skills.categories` di `src/data/portfolio.js` sesuai dengan bahasa pemrograman, framework, basis data, dan alat kerja yang Anda gunakan.
 
 ---
 
-## 🚢 Panduan Deployment ke Vercel
+## 🚀 Panduan Deployment ke Vercel
 
-Aplikasi ini telah dipersiapkan sepenuhnya untuk dideploy langsung ke **Vercel** tanpa konfigurasi rumit tambahan.
+Aplikasi ini telah dikonfigurasi penuh untuk Vercel Serverless Functions dan Vite SPA.
 
-### Opsi A: Deployment via GitHub & Dashboard Vercel (Disarankan)
-
-1. **Inisialisasi & Push ke GitHub**:
+### Langkah-langkah:
+1. Dorong kode ke repositori GitHub Anda:
    ```bash
    git add .
-   git commit -m "feat: inisialisasi portofolio full-stack developer"
-   git branch -M main
-   git remote add origin https://github.com/USERNAME_ANDA/NAMA_REPO.git
-   git push -u origin main
+   git commit -m "feat: implementasi lengkap CMS Portfolio dengan Turso, Cloudinary, dan Vercel"
+   git push origin main
    ```
-2. **Buka Dashboard Vercel**: Masuk ke [vercel.com](https://vercel.com) menggunakan akun GitHub Anda.
-3. **Import Project**: Klik tombol **"Add New..."** &rarr; **"Project"**, lalu pilih repositori yang baru saja Anda push.
-4. **Verifikasi Pengaturan Build**:
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
-5. **Deploy**: Klik tombol **"Deploy"**. Vercel akan memproses build dalam waktu sekitar 30 detik.
-6. **Perbarui Domain Sitemap & Robots**:
-   Setelah mendapatkan URL Vercel (misal: `https://tisna-portfolio.vercel.app`), ganti placeholder URL pada:
-   - `public/robots.txt`
-   - `public/sitemap.xml`
-
-### Opsi B: Deployment via Vercel CLI
-```bash
-# Instal Vercel CLI (jika belum terinstal)
-npm install -g vercel
-
-# Jalankan proses deployment langsung dari terminal
-vercel
-```
-
----
-
-## 🛡️ Kebijakan Keamanan & Praktik Terbaik
-
-- **Tanpa Secret Klien**: Tidak ada kunci API pribadi atau token rahasia yang disimpan pada kode frontend.
-- **Link Eksternal Aman**: Setiap link pembuka tab baru (`target="_blank"`) dilengkapi secara ketat dengan atribut `rel="noopener noreferrer"`.
-- **Sanitasi Formulir**: Validasi input formulir menggunakan aturan regex RFC 5322 tanpa memicu injeksi skrip.
-- **Security Headers Terpasang**: `vercel.json` secara otomatis menginjeksi header perlindungan browser:
-  - `X-Content-Type-Options: nosniff` (mencegah MIME sniffing)
-  - `X-Frame-Options: DENY` (mencegah Clickjacking)
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()` (memblokir akses izin perangkat yang tidak diperlukan)
+2. Buka dashboard [Vercel](https://vercel.com/) dan pilih **Add New Project**.
+3. Hubungkan repositori GitHub Anda.
+4. Pada bagian **Environment Variables**, tambahkan variabel berikut:
+   - `TURSO_DATABASE_URL`
+   - `TURSO_AUTH_TOKEN`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+   - `SESSION_SECRET`
+   - `ADMIN_EMAIL`
+   - `ADMIN_PASSWORD`
+5. Tekan **Deploy**. Vercel akan otomatis membangun bundel React di direktori `dist` dan menyiapkan serverless functions pada rute `/api/*`.
+6. Akses dashboard CMS Anda di `https://your-domain.vercel.app/admin/login` menggunakan kredensial admin yang telah diprovisi.
 
 ---
 
 ## 📄 Lisensi
-Hak Cipta © 2026. Proyek ini dilisensikan di bawah [MIT License](LICENSE).
+Proyek ini dibuat untuk keperluan portofolio profesional dan pembelajaran rekayasa perangkat lunak. Bebas digunakan dan dimodifikasi.

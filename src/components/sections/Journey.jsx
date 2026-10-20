@@ -1,13 +1,13 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { portfolioData } from '../../data/portfolio';
+import { usePortfolio } from '../../context/PortfolioContext';
 import { SectionHeading } from '../ui/SectionHeading';
 import { Card } from '../ui/Card';
 
 export const Journey = () => {
-  const { journey } = portfolioData;
+  const { experiences } = usePortfolio();
 
-  if (!journey || !journey.milestones || journey.milestones.length === 0) {
+  if (!experiences || experiences.length === 0) {
     return null;
   }
 
@@ -17,13 +17,13 @@ export const Journey = () => {
         
         <SectionHeading
           tag="Rekam Jejak"
-          title={journey.title}
-          subtitle={journey.subtitle}
+          title="Perjalanan & Milestone"
+          subtitle="Rangkaian eksplorasi dan pencapaian pembelajaran terarah dalam pengembangan software"
         />
 
         <div className="relative border-l-2 border-[#1E3A5F] ml-4 md:ml-32 space-y-10 pl-6 md:pl-10">
-          {journey.milestones.map((milestone, index) => (
-            <div key={index} className="relative group">
+          {experiences.map((milestone, index) => (
+            <div key={milestone.id || index} className="relative group">
               
               {/* Timeline dot */}
               <div
@@ -52,9 +52,11 @@ export const Journey = () => {
                   {milestone.organization}
                 </p>
 
-                <p className="mt-3 text-sm text-slate-300 leading-relaxed">
-                  {milestone.description}
-                </p>
+                {milestone.description && (
+                  <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+                    {milestone.description}
+                  </p>
+                )}
 
                 {milestone.tags && milestone.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-1.5 pt-3 border-t border-[#1E3A5F]/60">

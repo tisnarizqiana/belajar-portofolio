@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Code2, Send } from 'lucide-react';
+import { Menu, X, Code2, Send, Shield } from 'lucide-react';
+import { usePortfolio } from '../../context/PortfolioContext';
 import { portfolioData } from '../../data/portfolio';
 import { GithubIcon, LinkedinIcon } from '../ui/Icons';
-
-const NAV_ITEMS = [
-  { label: 'Beranda', href: '#home', id: 'home' },
-  { label: 'Tentang', href: '#about', id: 'about' },
-  { label: 'Keahlian', href: '#skills', id: 'skills' },
-  { label: 'Proyek', href: '#projects', id: 'projects' },
-  { label: 'Perjalanan', href: '#journey', id: 'journey' },
-  { label: 'Kontak', href: '#contact', id: 'contact' },
-];
 
 export const Navbar = ({ activeSection }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { personal } = portfolioData;
+  const { profile, settings, articles } = usePortfolio();
+
+  const displayName = profile?.name || portfolioData.personal.name;
+  const github = profile?.github_url || portfolioData.personal.github;
+  const linkedin = profile?.linkedin_url || portfolioData.personal.linkedin;
+
+  const navItems = [
+    { label: 'Beranda', href: '#home', id: 'home' },
+    { label: 'Tentang', href: '#about', id: 'about' },
+    { label: 'Keahlian', href: '#skills', id: 'skills' },
+    { label: 'Proyek', href: '#projects', id: 'projects' },
+    { label: 'Perjalanan', href: '#journey', id: 'journey' },
+    ...(settings.enable_blog !== 'false' && articles?.length > 0
+      ? [{ label: 'Artikel', href: '#articles', id: 'articles' }]
+      : []),
+    { label: 'Kontak', href: '#contact', id: 'contact' },
+  ];
 
   // Handle scroll appearance
   useEffect(() => {
@@ -67,20 +75,20 @@ export const Navbar = ({ activeSection }) => {
           <a
             href="#home"
             className="group flex items-center gap-2.5 text-slate-100 font-bold text-lg tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-lg p-1"
-            aria-label={`${personal.name} - Beranda`}
+            aria-label={`${displayName} - Beranda`}
           >
             <div className="w-9 h-9 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-sky-400 group-hover:border-sky-400 group-hover:bg-blue-600/30 transition-colors">
               <Code2 className="w-5 h-5" aria-hidden="true" />
             </div>
             <span className="font-mono text-sm sm:text-base">
-              {personal.name.split(' ')[0]}
+              {displayName.split(' ')[0]}
               <span className="text-sky-400">.dev</span>
             </span>
           </a>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2" aria-label="Navigasi Utama">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = activeSection === item.id;
               return (
                 <a
@@ -101,9 +109,9 @@ export const Navbar = ({ activeSection }) => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {personal.github && (
+            {github && (
               <a
-                href={personal.github}
+                href={github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-[#0B1F3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
@@ -112,9 +120,9 @@ export const Navbar = ({ activeSection }) => {
                 <GithubIcon className="w-5 h-5" aria-hidden="true" />
               </a>
             )}
-            {personal.linkedin && (
+            {linkedin && (
               <a
-                href={personal.linkedin}
+                href={linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-[#0B1F3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
@@ -123,6 +131,14 @@ export const Navbar = ({ activeSection }) => {
                 <LinkedinIcon className="w-5 h-5" aria-hidden="true" />
               </a>
             )}
+            <a
+              href="/admin"
+              className="p-2 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-[#0B1F3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+              title="Akses CMS Admin"
+              aria-label="CMS Admin"
+            >
+              <Shield className="w-4 h-4" />
+            </a>
             <a
               href="#contact"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 shadow-sm hover:shadow-blue-500/20"
@@ -157,7 +173,7 @@ export const Navbar = ({ activeSection }) => {
         aria-hidden={!isOpen}
       >
         <nav className="flex flex-col gap-1.5" aria-label="Navigasi Mobile">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = activeSection === item.id;
             return (
               <a
@@ -175,13 +191,21 @@ export const Navbar = ({ activeSection }) => {
               </a>
             );
           })}
+          <a
+            href="/admin"
+            onClick={closeMenu}
+            className="px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-sky-300 hover:bg-[#0B1F3A] flex items-center gap-2"
+          >
+            <Shield className="w-4 h-4" />
+            <span>CMS Admin Dashboard</span>
+          </a>
         </nav>
 
         <div className="mt-6 pt-5 border-t border-[#1E3A5F] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {personal.github && (
+            {github && (
               <a
-                href={personal.github}
+                href={github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-[#0B1F3A] text-slate-300 hover:text-white border border-[#1E3A5F]"
@@ -190,9 +214,9 @@ export const Navbar = ({ activeSection }) => {
                 <GithubIcon className="w-5 h-5" aria-hidden="true" />
               </a>
             )}
-            {personal.linkedin && (
+            {linkedin && (
               <a
-                href={personal.linkedin}
+                href={linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-[#0B1F3A] text-slate-300 hover:text-white border border-[#1E3A5F]"

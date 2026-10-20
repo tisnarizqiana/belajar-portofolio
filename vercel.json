@@ -1,6 +1,16 @@
 {
   "framework": "vite",
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon\\.svg|robots\\.txt|sitemap\\.xml).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
