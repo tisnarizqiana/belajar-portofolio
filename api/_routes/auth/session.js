@@ -1,5 +1,5 @@
-import { authenticateAdmin } from '../_lib/auth.js';
-import { jsonResponse, errorResponse } from '../_lib/http.js';
+import { authenticateAdmin } from '../../_lib/auth.js';
+import { jsonResponse, errorResponse } from '../../_lib/http.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

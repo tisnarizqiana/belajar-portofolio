@@ -17,14 +17,7 @@ function apiDevPlugin() {
         }
 
         try {
-          // Parse path without query string
-          const parsedUrl = new URL(req.url, 'http://localhost');
-          const cleanPath = parsedUrl.pathname.replace(/^\/api\//, '');
-          
-          // Map to api file path
-          const apiFile = path.resolve(__dirname, 'api', `${cleanPath}.js`);
-          
-          // Dynamic import handler
+          const apiFile = path.resolve(__dirname, 'api', 'index.js');
           const module = await import(/* @vite-ignore */ `file://${apiFile}?t=${Date.now()}`);
           if (module.default && typeof module.default === 'function') {
             await module.default(req, res);

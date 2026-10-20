@@ -1,6 +1,6 @@
-import { authenticateAdmin } from '../_lib/auth.js';
-import { generateUploadSignature } from '../_lib/cloudinary.js';
-import { jsonResponse, errorResponse, verifyCsrf } from '../_lib/http.js';
+import { authenticateAdmin } from '../../_lib/auth.js';
+import { generateUploadSignature } from '../../_lib/cloudinary.js';
+import { jsonResponse, errorResponse, verifyCsrf } from '../../_lib/http.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

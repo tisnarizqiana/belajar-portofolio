@@ -1,6 +1,6 @@
-import { query } from '../_lib/db.js';
-import { authenticateAdmin } from '../_lib/auth.js';
-import { jsonResponse, errorResponse, parseJsonBody, verifyCsrf } from '../_lib/http.js';
+import { query } from '../../_lib/db.js';
+import { authenticateAdmin } from '../../_lib/auth.js';
+import { jsonResponse, errorResponse, parseJsonBody, verifyCsrf } from '../../_lib/http.js';
 
 export default async function handler(req, res) {
   const auth = await authenticateAdmin(req);

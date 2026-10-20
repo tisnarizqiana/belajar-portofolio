@@ -1,5 +1,5 @@
-import { revokeSession, clearSessionCookie } from '../_lib/auth.js';
-import { jsonResponse, errorResponse, verifyCsrf } from '../_lib/http.js';
+import { revokeSession, clearSessionCookie } from '../../_lib/auth.js';
+import { jsonResponse, errorResponse, verifyCsrf } from '../../_lib/http.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

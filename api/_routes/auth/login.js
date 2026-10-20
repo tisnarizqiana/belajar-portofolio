@@ -1,7 +1,7 @@
-import { query } from '../_lib/db.js';
-import { verifyPassword, createSession, serializeSessionCookie } from '../_lib/auth.js';
-import { jsonResponse, errorResponse, parseJsonBody, verifyCsrf } from '../_lib/http.js';
-import { checkRateLimit, getClientIp } from '../_lib/rateLimit.js';
+import { query } from '../../_lib/db.js';
+import { verifyPassword, createSession, serializeSessionCookie } from '../../_lib/auth.js';
+import { jsonResponse, errorResponse, parseJsonBody, verifyCsrf } from '../../_lib/http.js';
+import { checkRateLimit, getClientIp } from '../../_lib/rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
